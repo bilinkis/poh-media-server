@@ -9,19 +9,15 @@ const {upload, rng} = require('./utils');
 async function videoSanitizer(req, res) {
     try {
       let fileType;
-        if (req.body.type == 'quicktime') {
-          fileType = 'mov';
-        } else if (req.body.type == "x-matroska") {
-          
-            fileType = "mkv"
-          }else if (req.body.type == "x-msvideo"){
-            
-              fileType = "avi"
-            }else{
-              fileType = req.body.type;
-        }
-      
-    
+      if (req.body.type == 'quicktime') {
+        fileType = 'mov';
+      } else if (req.body.type == "x-matroska") {
+        fileType = "mkv"
+      } else if (req.body.type == "x-msvideo") {
+        fileType = "avi"
+      } else {
+        fileType = req.body.type;
+      }
 
       let inputName = rng();
       let outputName = rng();
