@@ -16,8 +16,16 @@ async function videoSanitizer(req, res, next) { // console.log(req.body)
         if (req.body.type == 'quicktime') {
             type = 'mov';
         } else {
+          if(req.body.type == "x-matroska"){
+            type = "mkv"
+          }else{
+            if(req.body.type == "x-msvideo"){
+              type = "avi"
+            }else{
             type = req.body.type;
         }
+      }
+    }
         let input = rng();
         let output = rng();
         var buffer = Buffer.from(new Uint8Array(req.body.buffer.data));
