@@ -12,12 +12,19 @@
     "debug": "~2.6.9",
     "exifremove": "^1.0.1",
     "express": "~4.16.1",
-    "ffmpeg": "^0.0.4",
+    "fluent-ffmpeg": "^2.1.2",
     "http-errors": "~1.6.3",
-    "jade": "~1.11.0",
+    "image-conversion": "^2.1.1",
+    "image-convert": "^0.1.33",
+    "image-size": "^1.0.1",
+    "imagemin": "^8.0.1",
+    "into-stream": "^6.0.0",
+    "jade": "^0.31.2",
     "jimp": "^0.16.1",
     "morgan": "~1.9.1",
-    "node-fetch": "2.6.1",
-    "randomstring": "^1.2.2"
+    "node-fetch": "^2.6.7",
+    "piexifjs": "^1.0.6",
+    "randomstring": "^1.2.2",
+    "streamifier": "^0.1.1"
   }
 }

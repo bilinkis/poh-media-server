@@ -13,7 +13,7 @@ function upload(fileName, buffer) {
     })
   };
 
-  return fetch('https://ipfs.kleros.io/add', options).then(res => res.json()).then(({ data }) => new URL(`https://ipfs.kleros.io/ipfs/${data[1].hash}${data[0].path}`));
+  return fetch('https://ipfs.kleros.io/add', options).then(res => res.json()).then(({ data }) => `https://ipfs.kleros.io/ipfs/${data[1].hash}${data[0].path}`);
 }
 
 function rng() {
