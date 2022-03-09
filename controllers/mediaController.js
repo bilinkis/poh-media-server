@@ -1,67 +1,83 @@
+const fs = require('fs');
+const path = require('path');
 const exif = require('exifremove');
 const Jimp = require('jimp');
-
-
-let FFmpeg = require('fluent-ffmpeg');
-let fs = require('fs');
-
-
-const path = require('path');
+const FFmpeg = require('fluent-ffmpeg');
 
 const {upload, rng} = require('./utils');
 
-async function videoSanitizer(req, res, next) { // console.log(req.body)
+async function videoSanitizer(req, res) {
     try {
-        let type;
-        if (req.body.type == 'quicktime') {
-            type = 'mov';
-        } else {
-            type = req.body.type;
-        }
-        let input = rng();
-        let output = rng();
-        var buffer = Buffer.from(new Uint8Array(req.body.buffer.data));
-        fs.writeFileSync(path.join(__dirname, '../tmp/') + input + '.' + type, buffer);
+      let fileType;
+      if (req.body.type == 'quicktime') {
+        fileType = 'mov';
+      } else {
+        fileType = req.body.type;
+      }
 
-        FFmpeg(path.join(__dirname, '../tmp/') + input + '.' + type).outputOptions(['-map_metadata -1', '-vcodec libx264', '-crf 24']).format('mp4').save(path.join(__dirname, '../tmp/') + output + '.mp4').on('error', function (err, stdout, stderr) {
-            console.log('Cannot process video: ' + err.message);
-        }).on('end', function () {
-            let finalBuffer = fs.readFileSync(path.join(__dirname, '../tmp/') + output + '.mp4')
-            upload(output + '.mp4', finalBuffer).then(function (URI) {
-                console.log(URI)
-                fs.unlinkSync(path.join(__dirname, '../tmp/') + input + '.'+type);
-                fs.unlinkSync(path.join(__dirname, '../tmp/') + output+ '.mp4');
-                res.send(URI);
-            })
+      let inputName = rng();
+      let outputName = rng();
+
+      let buffer = Buffer.from(new Uint8Array(req.body.buffer.data));
+      let tmpPath = path.join(__dirname, '../tmp/');
+
+      let inputPath = `${tmpPath}${inputName}.${fileType}`;
+
+      let outputFilename = `${outputName}.mp4`;
+      let outputPath = `${tmpPath}${outputFilename}`;
+
+      console.log('inputPath=', inputPath);
+      console.log('outputPath=', outputPath);
+      
+      fs.writeFileSync(inputPath, buffer);
+
+      FFmpeg(inputPath)
+        .outputOptions(['-map_metadata -1', '-vcodec libx264', '-crf 24'])
+        .format('mp4')
+        .save(outputPath)
+        .on('error', (error, stdout, stderr) => {
+          console.log(`Cannot process video: ${error.message}`);
+        })
+        .on('end', (stdout, stderr) => {
+          let outputBuffer = fs.readFileSync(outputPath);
+
+          console.log('outputBuffer=', outputBuffer);
+          
+          upload(outputFilename, outputBuffer).then((URI) => {
+            console.log('fileURI=', URI);
+
+            fs.unlinkSync(inputPath);
+            fs.unlinkSync(outputPath);
+
+            res.send(URI);
+          })
         });
-    } catch (err) {
-        console.log(err)
+    } catch (error) {
+      console.log(`Video handling error: ${error}`);
     }
-
-
 }
 
-async function photoSanitizer(req, res, next) {
-    try {
-        let buffer = Buffer.from(new Uint8Array(req.body.buffer.data));
-        let image = await Jimp.read(buffer);
-        let imageToJpg = await image.quality(100).getBufferAsync(Jimp.MIME_JPEG);
-        let imageJpgWithoutExif = exif.remove(imageToJpg);
+async function photoSanitizer(req, res) {
+  try {
+    let buffer = Buffer.from(new Uint8Array(req.body.buffer.data));
+    let image = await Jimp.read(buffer);
+    let imageToJpg = await image.quality(100).getBufferAsync(Jimp.MIME_JPEG);
+    let imageJpgWithoutExif = exif.remove(imageToJpg);
 
-        let filename = rng();
-        let fileURI = await upload(`${filename}.jpg`, imageJpgWithoutExif);
+    let filename = rng();
+    let fileURI = await upload(`${filename}.jpg`, imageJpgWithoutExif);
 
-        console.log('buffer=', buffer);
-        console.log('image=', image);
-        console.log('imageToJpg=', imageToJpg);
-        console.log('imageJpgWithoutExif=', imageJpgWithoutExif);
-        console.log('filename', filename);
-        console.log('fileURI=', fileURI);
+    console.log('buffer=', buffer);
+    console.log('image=', image);
+    console.log('imageToJpg=', imageToJpg);
+    console.log('imageJpgWithoutExif=', imageJpgWithoutExif);
+    console.log('filename=', filename);
+    console.log('fileURI=', fileURI);
 
-        res.send(fileURI);
-    } catch (error) {
-        console.log(`Photo handling error: ${error}`);
-    }
+    res.send(fileURI);
+  } catch (error) {
+    console.log(`Photo handling error: ${error}`);
+  }
 }
 exports.videoSanitizer = videoSanitizer;
 exports.photoSanitizer = photoSanitizer;
