@@ -1,43 +1,33 @@
-let {upload} = require('./utils');
+const exif        = require('exifremove');
+const Jimp        = require('jimp');
 
-let exif = require("exifremove");
-let imgConvert = require('image-convert');
-
+const { upload, rng }  = require('./utils');
 
 function videoSanitizer(req, res, next) {
-    console.log(req.body)
-
+  console.log(req.body);
 }
+
 async function photoSanitizer(req, res, next) {
-    try {
-        console.log(buffer)
-        var buffer = Buffer.from(new Uint8Array(req.body.buffer.data));
-        let base64 = buffer.toString("base64")
-        let jpeg = imgConvert.fromBuffer({
-            buffer: base64,
-            quality: 100,
-            output_format: "jpg",
-            size: "original"
-        }, function (err, buffer, file) { // buffer=> base64 encode, file=> file object
-            if (! err) {
+  try {
+    let buffer = Buffer.from(new Uint8Array(req.body.buffer.data));
+    let image = await Jimp.read(buffer);
+    let imageToJpg = await image.quality(100).getBufferAsync(Jimp.MIME_JPEG);
+    let imageJpgWithoutExif = exif.remove(imageToJpg);
 
-                let photoWithoutExif = exif.remove(buffer);
-                console.log(photoWithoutExif)
-                upload("photo.jpg", photoWithoutExif).then(function (URI) {
-                    console.log(URI)
-                    res.send(URI);
-                })
-            }
+    let filename = rng();
+    let fileURI = await upload(`${filename}.jpg`, imageJpgWithoutExif);
 
-        })
-        
+    console.log('buffer=', buffer);
+    console.log('image=', image);
+    console.log('imageToJpg=', imageToJpg);
+    console.log('imageJpgWithoutExif=', imageJpgWithoutExif);
+    console.log('filename', filename);
+    console.log('fileURI=', fileURI);
 
-
-    } catch (err) {
-        console.log(err)
-    }
-
-
+    res.send(fileURI);
+  } catch (error) {
+      console.log(`Photo handling error: ${error}`);
+  }
 }
 exports.videoSanitizer = videoSanitizer;
 exports.photoSanitizer = photoSanitizer;
