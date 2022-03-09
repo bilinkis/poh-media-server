@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
+let {videoSanitizer, photoSanitizer} = require('../controllers/mediaController')
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
+router.post('/video', videoSanitizer);
+router.post('/photo', photoSanitizer);
 
 module.exports = router;
