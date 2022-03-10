@@ -17,19 +17,22 @@ async function getVideoMetadata(path) {
   });
 }
 
+function getFileType(type) {
+  if (type == 'quicktime') {
+    return 'mov';
+  } else if (type == "x-matroska") {
+    return "mkv"
+  } else if (type == "x-msvideo") {
+    return "avi"
+  }
+
+  return type;
+}
+
 async function videoSanitizer(req, res) {
     try {
-      console.log(req.body);
-      let fileType;
-      if (req.body.type == 'quicktime') {
-        fileType = 'mov';
-      } else if (req.body.type == "x-matroska") {
-        fileType = "mkv"
-      } else if (req.body.type == "x-msvideo") {
-        fileType = "avi"
-      } else {
-        fileType = req.body.type;
-      }
+      console.log('Request body=', req.body);
+      let fileType = getFileType(req.body.type);
 
       let inputName = rng();
       let outputName = rng();
@@ -120,5 +123,6 @@ async function photoSanitizer(req, res) {
     console.log(`Photo handling error: ${error}`);
   }
 }
+
 exports.videoSanitizer = videoSanitizer;
 exports.photoSanitizer = photoSanitizer;
