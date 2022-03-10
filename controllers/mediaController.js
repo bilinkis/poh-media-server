@@ -2,12 +2,24 @@ const fs = require('fs');
 const path = require('path');
 const exif = require('exifremove');
 const Jimp = require('jimp');
-const FFmpeg = require('fluent-ffmpeg');
+const ffmpeg = require('fluent-ffmpeg');
 
 const {upload, rng} = require('./utils');
 
+const MAX_IMAGE_SIZE = 2 * 1000 * 1000 * 8;
+const MAX_VIDEO_SIZE = 7 * 1000 * 1000 * 8;
+
+async function getVideoMetadata(path) {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(path, (error, metadata) => {
+      resolve(metadata);
+    });
+  });
+}
+
 async function videoSanitizer(req, res) {
     try {
+      console.log(req.body);
       let fileType;
       if (req.body.type == 'quicktime') {
         fileType = 'mov';
@@ -35,26 +47,51 @@ async function videoSanitizer(req, res) {
       
       fs.writeFileSync(inputPath, buffer);
 
-      FFmpeg(inputPath)
-        .outputOptions(['-map_metadata -1', '-vcodec libx264', '-crf 24'])
+      let metadata = await getVideoMetadata(inputPath);
+      let options = ['-map_metadata -1', '-vcodec libx264', '-acodec mp3']; // '-crf 24' removed
+
+      // https://unix.stackexchange.com/questions/520597/how-do-i-reduze-the-size-of-a-video-to-a-target-size
+      if (metadata.format.size > MAX_VIDEO_SIZE) {
+        console.log('Video size exceeding maximum...');
+
+        let target_size = MAX_VIDEO_SIZE;
+        let length = metadata.format.duration;
+        let length_round_up = Math.ceil(length);
+        let total_bitrate = target_size / length_round_up;
+        let audio_bitrate = metadata.streams[1].bit_rate; // streams[1] may break with multiple streams? TODO: Know and check only audio stream.
+        let video_bitrate = total_bitrate - audio_bitrate;
+
+        console.log('total_length=', length);
+        console.log('audio_bitrate=', audio_bitrate);
+        console.log('video_bitrate=', video_bitrate);
+
+        options.push(
+          `-b:v ${video_bitrate}`,
+          `-maxrate:v ${video_bitrate}`,
+          `-b:a $audio_bitrate`,
+          // `-bufsize:v ${Math.floor(target_size / 20)}))`, // Not sure what this actually does nor it's needed
+        );
+      }
+
+      ffmpeg(inputPath)
+        .outputOptions(options)
         .format('mp4')
         .save(outputPath)
-        .on('error', (error, stdout, stderr) => {
-          console.log(`Cannot process video: ${error.message}`);
-        })
         .on('end', (stdout, stderr) => {
           let outputBuffer = fs.readFileSync(outputPath);
-
           console.log('outputBuffer=', outputBuffer);
           
           upload(outputFilename, outputBuffer).then((URI) => {
             console.log('fileURI=', URI);
 
-            fs.unlinkSync(inputPath);
-            fs.unlinkSync(outputPath);
+            fs.unlink(inputPath, (e) => { console.log(`Unlinked ${inputPath} async`); });
+            fs.unlink(outputPath, (e) => { console.log(`Unlinked ${outputPath} async`); });
 
             res.send(URI);
-          })
+          });
+        })
+        .on('error', (error, stdout, stderr) => {
+          console.log(`Cannot process video: ${error.message}`);
         });
     } catch (error) {
       console.log(`Video handling error: ${error}`);
