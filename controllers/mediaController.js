@@ -31,6 +31,8 @@ function getFileType(type) {
 
 async function videoSanitizer(req, res) {
     try {
+      
+      
       console.log('Request body=', req.body);
       let fileType = getFileType(req.body.type);
 
@@ -90,7 +92,7 @@ async function videoSanitizer(req, res) {
             fs.unlink(inputPath, (e) => { console.log(`Unlinked ${inputPath} async`); });
             fs.unlink(outputPath, (e) => { console.log(`Unlinked ${outputPath} async`); });
 
-            res.send(URI);
+            res.send({URI:URI});
           });
         })
         .on('error', (error, stdout, stderr) => {
@@ -118,7 +120,7 @@ async function photoSanitizer(req, res) {
     console.log('filename=', filename);
     console.log('fileURI=', fileURI);
 
-    res.send(fileURI);
+    res.send({URI:fileURI});
   } catch (error) {
     console.log(`Photo handling error: ${error}`);
   }
