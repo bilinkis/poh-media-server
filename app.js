@@ -10,7 +10,7 @@ var indexRouter = require('./routes/index');
 
 
 var app = express();
-app.listen(5000, () => {
+app.listen(process.env.PORT, () => {
   console.log('Running on port 5000.')
 })
 // view engine setup
