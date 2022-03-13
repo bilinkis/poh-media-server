@@ -107,7 +107,7 @@ async function photoSanitizer(req, res) {
   try {
     let buffer = Buffer.from(new Uint8Array(req.body.buffer.data));
     let image = await Jimp.read(buffer);
-    let imageToJpg = await image.quality(100).getBufferAsync(Jimp.MIME_JPEG);
+    let imageToJpg = await image.quality(95).getBufferAsync(Jimp.MIME_JPEG);
     let imageJpgWithoutExif = exif.remove(imageToJpg);
 
     let filename = rng();
