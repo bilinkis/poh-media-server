@@ -13,13 +13,18 @@ var app = express();
 app.listen(5000, () => {
   console.log("running on port 5000")
 })
+app.all('*', function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 
-app.use(cors({credentials: true, origin: true}))
-app.options('*', cors());
+app.use(cors())
 app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({limit: '100mb', type: 'application/json'}));
