@@ -16,16 +16,10 @@ app.listen(5000, () => {
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
-app.use(function(req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://proof-of-humanity-web-h4ck3r1.vercel.app/');
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-  
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  next();
-});
 
-app.use(cors())
+
+app.use(cors({credentials: true, origin: true}))
+app.options('*', cors());
 app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({limit: '100mb', type: 'application/json'}));
